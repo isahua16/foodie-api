@@ -84,9 +84,9 @@ def delete_client_login():
     if(error != None):
         return make_response(jsonify(error), 400)
     results = run_statement('call delete_client_login(?)', [request.headers.get('token')])
-    if(type(results) == list and results[0]['deleted_rows'] == "1"):
+    if(type(results) == list and results[0]['deleted_rows'] == 1):
         return make_response('User logged out', 200)
-    if(type(results) == list and results[0]['deleted_rows'] == "0"):
+    if(type(results) == list and results[0]['deleted_rows'] == 0):
         return make_response('Token does not exist', 400)
     else:
         return make_response('Something went wrong', 500)    
@@ -113,6 +113,8 @@ def post_restaurant():
     results = run_statement('call post_restaurant(?,?,?,?,?,?,?,?,?,?)', [request.json.get('email'), request.json.get('name'), request.json.get('address'), request.json.get('phone'), request.json.get('city'), request.json.get('profile_url'), request.json.get('banner_url'), request.json.get('password'), token, request.json.get('bio')])
     if(type(results) == list):
         return make_response(jsonify(results), 200)
+    elif("email_UN" in results):
+        return make_response('Email already in use', 400)
     else:
         return make_response('Something went wrong', 500)
 
@@ -124,8 +126,10 @@ def patch_restaurant():
     if(error != None):
         return make_response(jsonify(error), 400)
     results = run_statement('call patch_restaurant(?,?,?,?,?,?,?,?,?,?)', [request.json.get('email'), request.json.get('name'), request.json.get('address'), request.json.get('phone'), request.json.get('city'), request.json.get('profile_url'), request.json.get('banner_url'), request.json.get('password'), request.headers.get('token'), request.json.get('bio')])
-    if(type(results) == list):
-        return make_response(jsonify(results), 200)
+    if(type(results) == list and results[0]['updated_rows'] != 0):
+        return make_response("Succesfully updated", 200)
+    elif(type(results) == list and results[0]['updated_rows'] == 0):
+        return make_response("Update failed", 400)
     else:
         return make_response('Something went wrong', 500)
     
@@ -138,8 +142,10 @@ def delete_restaurant():
     elif(error_headers != None):
         return make_response(jsonify(error_headers), 400)
     results = run_statement('call delete_restaurant(?,?)', [request.json.get('password'), request.headers.get('token')])
-    if(type(results) == list):
-        return make_response(jsonify(results), 200)
+    if(type(results) == list and results[0]['deleted_rows'] == 1):
+        return make_response('Successfully deleted', 200)
+    elif(type(results) == list and results[0]['deleted_rows'] == 0):
+        return make_response('Delete failed', 400)
     else:
         return make_response('Something went wrong', 500)
 
@@ -160,6 +166,8 @@ def post_restaurant_login():
     results = run_statement('call post_restaurant_login(?,?,?)', [request.json.get('email'), request.json.get('password'), token])
     if(type(results) == list):
         return make_response(jsonify(results), 200)
+    elif("'restaurant_id' cannot be null" in results):
+        return make_response("Email and password don't match", 400)
     else:
         return make_response('Something went wrong', 500)
 
@@ -172,7 +180,7 @@ def delete_restaurant_login():
     if(type(results) == list and results[0]['deleted_rows'] == 1):
         return make_response(jsonify(results), 200)
     elif(type(results) == list and results[0]['deleted_rows'] == 0):
-        return make_response('The token is invalid', 400)
+        return make_response('The token does not exist', 400)
     else:
         return make_response('Something went wrong', 500)
 
