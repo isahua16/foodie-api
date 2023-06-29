@@ -12,8 +12,10 @@ def get_client():
     if(error != None):
         return make_response(jsonify(error), 400)
     results = run_statement('call get_client(?)', [request.args.get('client_id')])
-    if(type(results) == list):
+    if(type(results) == list and results != []):
         return make_response(jsonify(results), 200)
+    elif(type(results) == list and results == []):
+         return make_response('Client id does not exist', 400)
     else:
         return make_response('Something went wrong', 500)
 
@@ -26,6 +28,8 @@ def post_client():
     results = run_statement('call post_client(?,?,?,?,?,?,?)', [request.json.get('email'), request.json.get('first_name'), request.json.get('last_name'), request.json.get('image_url'), request.json.get('username'), request.json.get('password'), token])
     if(type(results) == list):
         return make_response(jsonify(results), 200)
+    elif("email_UN" in results):
+        return make_response('Email already in use', 400)
     else:
         return make_response('Something went wrong', 500)
 
@@ -37,8 +41,10 @@ def patch_client():
     if(error != None):
         return make_response(jsonify(error), 400)
     results = run_statement('call patch_client(?,?,?,?,?,?,?)', [request.json.get('email'), request.json.get('first_name'), request.json.get('last_name'), request.json.get('image_url'), request.json.get('username'), request.json.get('password'), request.headers.get('token')])
-    if(type(results) == list):
-        return make_response(jsonify(results), 200)
+    if(type(results) == list and results[0]['updated_rows'] != 0):
+        return make_response("Succesfully updated", 200)
+    elif(type(results) == list and results[0]['updated_rows'] == 0):
+        return make_response("Update failed", 400)
     else:
         return make_response('Something went wrong', 500)
     
@@ -51,8 +57,10 @@ def delete_client():
     elif(error_headers != None):
         return make_response(jsonify(error_headers), 400)
     results = run_statement('call delete_client(?,?)', [request.headers.get('token'),request.json.get('password')])
-    if(type(results) == list):
-        return make_response(jsonify(results), 200)
+    if(type(results) == list and results[0]['deleted_rows'] == 1):
+        return make_response('Successfully deleted', 200)
+    elif(type(results) == list and results[0]['deleted_rows'] == 0):
+        return make_response('Delete failed', 400)
     else:
         return make_response('Something went wrong', 500)
 
@@ -65,6 +73,8 @@ def post_client_login():
     results = run_statement('call post_client_login(?,?,?)', [request.json.get('email'), request.json.get('password'), token])
     if(type(results) == list):
         return make_response(jsonify(results), 200)
+    elif("'client_id' cannot be null" in results):
+        return make_response("Email and password don't match", 400)
     else:
         return make_response('Something went wrong', 500)
 
@@ -74,8 +84,10 @@ def delete_client_login():
     if(error != None):
         return make_response(jsonify(error), 400)
     results = run_statement('call delete_client_login(?)', [request.headers.get('token')])
-    if(type(results) == list):
-        return make_response(jsonify(results), 200)
+    if(type(results) == list and results[0]['deleted_rows'] == "1"):
+        return make_response('User logged out', 200)
+    if(type(results) == list and results[0]['deleted_rows'] == "0"):
+        return make_response('Token does not exist', 400)
     else:
         return make_response('Something went wrong', 500)    
 
